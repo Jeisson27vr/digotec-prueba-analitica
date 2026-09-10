@@ -1,21 +1,35 @@
-## 4. Integración y Automatización (Ecosistema Microsoft 365)
+# Prueba Técnica: Analítica y Automatización Digital
+**Candidato:** Jeisson Ventura
 
-**A. Adaptación a SharePoint Framework (SPFx)**
-Para llevar esta solución construida en React a un entorno corporativo de SharePoint, el proceso sería:
-1. Crear un proyecto SPFx usando el generador de Yeoman (`@microsoft/generator-sharepoint`).
-2. Aislar el componente `Dashboard.jsx` y empaquetarlo como un **Web Part** de lado del cliente.
-3. Reemplazar el archivo JSON estático por llamadas a la API de SharePoint (SPHttpClient) o MS Graph API para consumir los datos de forma dinámica.
-4. Para el reporte de Power BI, se utilizaría el paquete `powerbi-client-react`, inyectando el `embedUrl` y gestionando el Token de Acceso mediante Azure AD (Entra ID) para respetar las políticas de seguridad del inquilino.
+Este repositorio contiene la solución técnica integral para el ciclo de vida de los datos: desde la ingeniería de datos (Python) y visualización (Power BI), hasta el desarrollo de una interfaz web (React) preparada para entornos corporativos (Microsoft 365).
 
-**B. Almacenamiento, Permisos y Configuración**
-En un escenario corporativo real de alto volumen:
-*   **Datos transaccionales:** No vivirían en SharePoint. Se almacenarían en Azure SQL Database o Dataverse, y la aplicación web los consumiría mediante una API intermedia o directamente en Power BI.
-*   **Parámetros de Configuración (Filtros, Diccionarios):** Se almacenarían en **Listas de SharePoint**, lo que permitiría a los usuarios de negocio (Key Users) modificar las categorías o segmentaciones sin necesidad de tocar el código fuente.
-*   **Permisos y Seguridad:** Se gestionaría 100% mediante grupos de Microsoft Entra ID (Azure AD), aplicando Row-Level Security (RLS) en Power BI para que un gerente regional de "Guayaquil", por ejemplo, solo vea los clientes de su ciudad al iniciar sesión.
+## 1. Preparación y Análisis de Datos (Python)
+**Supuestos y Reglas de Limpieza:**
+* Se eliminaron 113 registros duplicados exactos para evitar alteraciones en los KPIs.
+* Los nulos en `cupo_credito` se imputaron como $0 asumiendo que corresponden a productos no crediticios.
+* Se detectaron y corrigieron errores tipográficos intencionales en las categorías (ej. *Streamng*, *Tech*) utilizando diccionarios de estandarización.
 
-**C. Propuesta de Automatización (Power Automate)**
-Se propone un flujo de **"Alerta Temprana de Vencimientos"** para mejorar la retención de clientes:
-1. **Trigger:** Flujo programado (Scheduled Cloud Flow) que se ejecuta todos los días a las 8:00 AM.
-2. **Acción 1 (Obtener Datos):** Consulta la base de datos o el dataset de Power BI buscando productos cuya `fecha_vencimiento` sea igual a `Hoy + 30 días`.
-3. **Acción 2 (Condición):** Filtra solo a los clientes de segmentos de alto valor (VIP, Premium) o a los clientes multiproducto.
-4. **Acción 3 (Notificación):** Envía una **Adaptive Card** automatizada por Microsoft Teams al Oficial de Cuenta correspondiente con el nombre del cliente, el saldo pendiente y un botón de "Llamar ahora", o envía un correo automatizado al cliente recordando la renovación de su producto.
+**Criterio de Segmentación Conductual ("Lovers"):**
+Se creó un modelo de concentración de gasto. Un cliente es catalogado como `Lover` (Travel, Food, Tech, Streaming) **si y solo si más del 50% de su gasto total registrado está dirigido a esa única categoría**. Si su gasto es diversificado, se cataloga como `General Shopper`.
+
+**Insights Accionables:**
+1. **Alta Tasa de Inactividad:** 545 clientes (24.7% de la cartera) tienen productos pero no registran consumos. *Acción:* Ejecutar campaña de reactivación transaccional.
+2. **Nicho de Alto Valor:** Los "Lovers" (Food, Travel, Tech, Streaming) representan el 16% de los usuarios, pero con un gasto ultra-concentrado. *Acción:* Ideales para ofrecer tarjetas de crédito Co-Branded.
+3. **Dominio Generalista:** 1,302 usuarios diversifican su gasto. *Acción:* Programas genéricos de Cashback asegurarán mayor retención para este bloque masivo.
+
+## 2. Aplicación React y Ecosistema M365
+**Instrucciones para ejecutar la aplicación web:**
+1. Navegar a la carpeta del frontend: `cd app-digotec`
+2. Instalar dependencias: `npm install`
+3. Iniciar el servidor local: `npm run dev`
+4. Abrir en el navegador: `http://localhost:5173` (Usar cualquier credencial en el login simulado).
+
+## 3. Integración y Automatización (SPFx y Power Automate)
+**A. Adaptación a SharePoint Framework (SPFx):**
+Para llevar la solución React a M365, se empaquetaría el componente `Dashboard.jsx` como un *Web Part* usando Yeoman. El archivo JSON sería reemplazado por la API de SharePoint o Dataverse. El Power BI embebido inyectaría el `embedUrl` gestionando el Token de Acceso mediante Azure AD (Entra ID).
+
+**B. Automatización Propuesta:**
+Se propone un flujo de **"Alerta Temprana de Vencimientos"** en Power Automate:
+* **Trigger:** Programado (Diario 8:00 AM).
+* **Acción:** Consulta productos con `fecha_vencimiento` a 30 días.
+* **Notificación:** Envía una *Adaptive Card* por Microsoft Teams al Oficial de Cuenta con los datos del cliente y un botón de "Contactar", priorizando clientes VIP o multiproducto.
